@@ -25,10 +25,14 @@ function App() {
 
   const handleDataParsed = (data) => {
     setCsvData(data);
-    setXKey("");
-    setYKey("");
+
+    const keys = data.length > 0 ? Object.keys(data[0]) : [];
+    setXKey(keys[0] || "");
+    setYKey(keys[1] || "");
+
     setSelectedCharts([]);
   };
+
 
   const keys = csvData.length > 0 ? Object.keys(csvData[0]) : [];
 
@@ -122,35 +126,54 @@ function App() {
               </div>
 
               {selectedCharts.map((type) => (
-                <div
-                  key={type}
-                  ref={(el) => (chartRefs.current[type] = el)}
-                  className="border p-4 rounded shadow-sm bg-white"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-md font-semibold">
-                      {type.toUpperCase()} Chart
-                    </h3>
-                    <button
-                      onClick={() =>
-                        setSelectedCharts((prev) =>
-                          prev.filter((chart) => chart !== type)
-                        )
-                      }
-                      className="text-red-500 hover:text-red-700 text-sm"
-                      title="Remove chart"
-                    >
-                      ❌
-                    </button>
+                  <div
+                    key={type}
+                    ref={(el) => (chartRefs.current[type] = el)}
+                    className="border p-4 rounded shadow-sm bg-white"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-md font-semibold">{type.toUpperCase()} Chart</h3>
+                      <div className="flex gap-2">
+                        <button
+                          title="Download chart as image"
+                          onClick={async () => {
+                            const chartNode = chartRefs.current[type];
+                            if (chartNode) {
+                              const html2canvas = (await import("html2canvas")).default;
+                              html2canvas(chartNode).then((canvas) => {
+                                const link = document.createElement("a");
+                                link.download = `${type}_chart.png`;
+                                link.href = canvas.toDataURL("image/png");
+                                link.click();
+                              });
+                            }
+                          }}
+                          className="text-green-600 hover:text-green-800 text-sm"
+                        >
+                          📥
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            setSelectedCharts((prev) => prev.filter((chart) => chart !== type))
+                          }
+                          className="text-red-500 hover:text-red-700 text-sm"
+                          title="Remove chart"
+                        >
+                          ❌
+                        </button>
+                      </div>
+                    </div>
+
+                    <VisualizationRenderer
+                      data={csvData}
+                      chartType={type}
+                      xKey={xKey}
+                      yKey={yKey}
+                    />
                   </div>
-                  <VisualizationRenderer
-                    data={csvData}
-                    chartType={type}
-                    xKey={xKey}
-                    yKey={yKey}
-                  />
-                </div>
-              ))}
+                ))}
+
             </div>
           )}
         </>
